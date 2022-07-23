@@ -1,11 +1,11 @@
 /**
  * -----------------------------------------------------------------------------
  * @package     smartVISU
- * @author      Stefan Widmer (inspired by https://github.com/ioBroker/ioBroker.socketio/blob/master/example/conn.js)
- * @copyright   2017
- * @license     GPL [http://www.gnu.de]
+ * @author      MiGoller(inspired by https://github.com/ioBroker/ioBroker.socketio/blob/master/example/conn.js)
+ * @copyright   2022
+ * @license     MIT [https://github.com/MiGoller/smartvisu_iobroker_driver/blob/main/LICENSE
  * -----------------------------------------------------------------------------
- * @label       ioBroker
+ * @label       ioBroker2
  *
  * @default     driver_autoreconnect   true
  * @default     driver_port            8084
@@ -63,6 +63,25 @@
 	 */
 	write: function (item, val, callback) {
 		if (io.checkConnected) {
+            //  Type conversion for ioBroker (best guess)
+            //  smartVISU values are always of type `string`. ioBroker Socket.io adapter will
+            //  not write the states, if the type doesn't matches the target datapoint.
+
+            if (val) {
+                if (!isNaN(val) && !isNaN(parseFloat(val))) {
+                    //  Number
+                    val = parseFloat(val);
+                }
+                else if (typeof JSON.parse(val) === "boolean") {
+                    //  Boolean
+                    val = JSON.parse(val);
+                }
+    
+                //  Uncomment the following line for debugging in browser's console.
+                // console.log(`ioBroker2 driver - write ${item} --> ${val} (${typeof val})`);
+            }
+
+            //  Emit the state
 			io.socket.emit('setState', item, val, callback);
 		}
 	},
@@ -278,11 +297,11 @@
 	stateChanged: function(item, state) {
 		if (state === null || typeof state !== 'object') return;
 		var val = state.val;
-		// convert boolean
-		if (val === false) 
-			val = 0;
-		if (val === true) 
-			val = 1;
+        //  Uncomment the following line for debugging in browser's console.
+        // console.log(`ioBroker2 driver - stateChanged ${item} --> ${val} (${typeof val})`);
+
+        //  ioBroker Socket.io adapter emits states with the correct type of the datapoint.
+        //  So, we stop converting `boolean` values to `number`s `1` and `0`!
 		widget.update(item, val);
 	},
 	
